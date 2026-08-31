@@ -1,0 +1,11 @@
+dotenv
+streamlit
+requests
+numpy
+psycopg2
+ipykernel
+langchain
+langgraph
+langchain-groq
+deepagents
+langchain-text-splitters
