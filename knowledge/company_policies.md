@@ -21,6 +21,7 @@ A sale is represented across two tables: `sales.salesorderheader` (one row per o
 **Classification:** Analytical convention
 
 When a user asks for "sales revenue" or "total sales," the agent should clarify whether they mean:
+
 - Gross line revenue before discount (`unitprice * orderqty`)
 - Net line revenue after discount (`unitprice * (1 - unitpricediscount) * orderqty`) — generally the best default for "revenue"
 - The order-level total including tax and freight (`subtotal + taxamt + freight`)

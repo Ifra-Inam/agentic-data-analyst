@@ -1,6 +1,5 @@
 dotenv
 streamlit
-requests
 numpy
 psycopg2
 ipykernel
@@ -9,3 +8,7 @@ langgraph
 langchain-groq
 deepagents
 langchain-text-splitters
+langchain-ollama
+langchain-chroma
+plotly
+#pydantic 
