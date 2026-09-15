@@ -4,6 +4,7 @@ from .nodes.get_schema import get_schema
 from .nodes.generate_sql import generate_sql
 from .nodes.validate_sql import validate_sql
 from .nodes.execute_sql import execute_sql
+from .nodes.check_result import check_result    
 from .nodes.analyze_result import analyze_result
 from .nodes.create_chart import create_chart
 
@@ -16,6 +17,7 @@ graph.add_node("schema", get_schema)
 graph.add_node("sql", generate_sql)
 graph.add_node("validate", validate_sql)
 graph.add_node("execute", execute_sql)
+graph.add_node("check", check_result)
 graph.add_node("analyze", analyze_result)
 graph.add_node("chart", create_chart)
 
@@ -38,7 +40,14 @@ graph.add_conditional_edges("validate",
                                     False: "sql"
                                 }
                             )
-graph.add_edge("execute", "analyze")
+graph.add_edge("execute", "check")
+graph.add_conditional_edges("check",
+                                lambda state: state["result_valid"],
+                                {
+                                    True: "analyze",
+                                    False: "sql"
+                                }
+                            )
 graph.add_conditional_edges("analyze",
                             lambda state: state["chart_needed"],
                             {
