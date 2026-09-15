@@ -1,7 +1,7 @@
 dotenv
 streamlit
 numpy
-psycopg2
+psycopg2-binary
 ipykernel
 langchain
 langgraph

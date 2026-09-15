@@ -6,21 +6,25 @@ def execute_sql(state:AgentState)->AgentState:
 
     connection = get_connection()
     cursor = connection.cursor()
+    
+    try:
 
-    query = state["generated_sql"]
-    cursor.execute(query)
-    rows = cursor.fetchall()
+        query = state["generated_sql"]
+        cursor.execute(query)
+        rows = cursor.fetchall()
 
-    columns = [desc[0] for desc in cursor.description]
+        columns = [desc[0] for desc in cursor.description]
 
-    state["result"] = [
-        dict(zip(columns, row))
-        for row in rows
-    ]
+        state["result"] = [
+            dict(zip(columns, row))
+            for row in rows
+        ]
 
-    cursor.close()
-    connection.close()
+    except Exception as e: 
+        state["sql_error"] = str(e)
 
-    # state["result"] = result     
+    finally:
+        cursor.close()
+        connection.close()
 
     return state
