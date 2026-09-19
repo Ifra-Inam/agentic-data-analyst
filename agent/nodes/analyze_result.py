@@ -42,15 +42,6 @@ def analyze_result(state:AgentState) -> AgentState:
     structured_llm = llm.with_structured_output(ChartSpecs)
 
     if state["chart_needed"] == "CHART":
-        # chart_prompt = f'''
-        #     You must determine the appropirate specifications for a chart provided the following query result.
-
-        #     Qeury Result: {state["result"]}
-
-        #         - choose the appropriate chart type
-        #         - choose the x and y columns
-        #         - provide a clear title
-        # '''
         chart_prompt = f'''
             Determine the appropriate chart specifications for the user's question
             and query result.

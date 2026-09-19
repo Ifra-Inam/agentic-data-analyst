@@ -12,7 +12,7 @@ def get_schema(state:AgentState) -> AgentState:
         cursor.execute("""
             SELECT table_schema, table_name, column_name
             FROM information_schema.columns
-            WHERE table_schema NOT IN ('pg_catalog', 'information_schema', 'hr', 'pe', 'pu', 'pr') 
+            WHERE table_schema NOT IN ('pg_catalog', 'information_schema', 'hr', 'pe', 'pu', 'pr', 'sa') 
             ORDER BY table_schema, table_name, ordinal_position;
         """)
 

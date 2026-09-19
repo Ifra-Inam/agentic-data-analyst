@@ -7,24 +7,27 @@ from langchain_core.documents import Document
 from pathlib import Path
 
 DOC_PATHS = [
-    "knowledge/business_definitions.md",
-    "knowledge/company_policies.md",
-    "knowledge/database_documentation.md",
-    "knowledge/metric_definitions.md"
+    "business_definitions.md",
+    "company_policies.md",
+    "database_documentation.md",
+    "metric_definitions.md",
 ]
+
+KNOWLEDGE_DIR = Path(__file__).resolve().parents[2] / "knowledge"
 
 def load_docs(doc_paths: list[str] | None = None) -> list[Document]:
     """Fetch documentation pages as Documents."""
     paths = doc_paths or DOC_PATHS
     docs: list[Document] = []
-    for path in paths: 
-        try: 
-            content = Path(path).read_text(encoding="utf-8")
+    for path in paths:
+        file_path = KNOWLEDGE_DIR / path
+        try:
+            content = file_path.read_text(encoding="utf-8")
         except FileNotFoundError: 
-            print(f"File not found: {path}")
+            print(f"File not found: {file_path}")
             continue
         docs.append(
-            Document(page_content=content, metadata={"source": path})
+            Document(page_content=content, metadata={"source": str(file_path)})
         )
     return docs
 

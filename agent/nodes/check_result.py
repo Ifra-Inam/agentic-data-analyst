@@ -4,7 +4,7 @@ from ..llm import get_llm
 def check_result(state:AgentState) -> AgentState:
     """This node checks whether the result answers the user's question"""
 
-    if state["sql_error"]:
+    if state.get("sql_error"):
         state["result_valid"] = False
         return state
 
@@ -20,7 +20,7 @@ def check_result(state:AgentState) -> AgentState:
         {state["generated_sql"]}
 
         SQL Error:
-        {state["sql_error"]}
+        {state.get("sql_error")}
 
         Query Result:
         {state["result"]}

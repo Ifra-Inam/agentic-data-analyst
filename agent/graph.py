@@ -55,12 +55,6 @@ graph.add_conditional_edges("analyze",
                                 "NO_CHART": END
                             })
 graph.add_edge("chart", END)
-app = graph.compile()
 
-state_initial=AgentState(user_query="What is the net revenue for products with product id 777, 714, 776? Provide a chart.")
-result = app.invoke(state_initial)
-
-print(result)
-
-if result.get("chart"):
-    result["chart"].show()
+def app():
+    return graph
