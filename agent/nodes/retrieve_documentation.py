@@ -84,9 +84,13 @@ def retrieve_documentation(state:AgentState) -> AgentState:
         User's Question: {state["user_query"]}
         Business Context: {state["doc_info"]}
 
-        Return exactly one:
-            END: The question can sufficiently be answered using the business context. 
-            SCHEMA: The question reqiures database information.
+        Your response MUST be exactly ONE of these two words:
+        END
+        SCHEMA
+        
+        Rules:
+        - END if the question can sufficiently be answered using the business context. 
+        - SCHEMA if the question reqiures database information.
     '''
 
     llm = get_llm()

@@ -29,10 +29,13 @@ def check_result(state:AgentState) -> AgentState:
             VALID: The result correctly answers the user's question.
             REDO: The query failed, returned an error, returned an unusable result, or does not answer the user's question.
     '''
+    print("CHECK PROMPT CHARACTERS:", len(check_result_prompt))
+    print("RESULT ROWS:", len(state["result"]))
 
-    check_response = llm.invoke(check_result_prompt).content.strip()
+    check_result = llm.invoke(check_result_prompt).content.strip()
 
-    if check_response == "VALID":
+    print(check_result)
+    if check_result == "VALID":
         state["result_valid"] = True
     else:
         state["result_valid"] = False

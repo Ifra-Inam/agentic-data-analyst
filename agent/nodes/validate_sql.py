@@ -17,11 +17,11 @@ def check_read_only(sql:str) -> bool:
     try:
         parsed = sqlglot.parse_one(sql, dialect="postgres")
 
-        #Allow SELECT queries
+        # Allow SELECT queries
         if isinstance(parsed, exp.Select):
             return True
 
-        #Allow WITH... SELECT queries
+        # Allow WITH... SELECT queries
         if isinstance(parsed, exp.With):
             return True
 
@@ -38,9 +38,13 @@ def validate_sql(state: AgentState) -> AgentState:
 
     if not syntax_valid: 
         state["sql_valid"] = False
+        print("sql is not syntactically correct")
+        return state
 
     if not read_only:
         state["sql_valid"] = False
+        print("sql is not read only")
+        return state
 
     is_valid_sql_prompt = f'''
         Determine whether this SQL correctly answers the user's question.
@@ -61,6 +65,7 @@ def validate_sql(state: AgentState) -> AgentState:
 
     llm = get_llm()
     response = llm.invoke(is_valid_sql_prompt).content.strip()
+    print(response)
 
     if response == "VALID":
         state["sql_valid"] = True

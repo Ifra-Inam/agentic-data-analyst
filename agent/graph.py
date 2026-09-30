@@ -56,5 +56,4 @@ graph.add_conditional_edges("analyze",
                             })
 graph.add_edge("chart", END)
 
-def app():
-    return graph
+app = graph.compile()
