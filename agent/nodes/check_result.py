@@ -1,4 +1,4 @@
-from ..agent_state import AgentState, record_revision
+from ..agent_state import AgentState
 from ..llm import get_llm
 
 def check_result(state:AgentState) -> AgentState:
@@ -6,7 +6,6 @@ def check_result(state:AgentState) -> AgentState:
 
     if state.get("sql_error"):
         state["result_valid"] = False
-        record_revision(state)
         return state
 
     llm = get_llm()
@@ -40,6 +39,5 @@ def check_result(state:AgentState) -> AgentState:
         state["result_valid"] = True
     else:
         state["result_valid"] = False
-        record_revision(state)
 
     return state

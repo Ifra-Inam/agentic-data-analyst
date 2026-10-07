@@ -1,4 +1,4 @@
-from ..agent_state import AgentState, record_revision
+from ..agent_state import AgentState
 from ..llm import get_llm
 
 import sqlglot
@@ -38,13 +38,11 @@ def validate_sql(state: AgentState) -> AgentState:
 
     if not syntax_valid: 
         state["sql_valid"] = False
-        record_revision(state)
         print("sql is not syntactically correct")
         return state
 
     if not read_only:
         state["sql_valid"] = False
-        record_revision(state)
         print("sql is not read only")
         return state
 
@@ -73,6 +71,5 @@ def validate_sql(state: AgentState) -> AgentState:
         state["sql_valid"] = True
     else:
         state["sql_valid"] = False
-        record_revision(state)
 
     return state

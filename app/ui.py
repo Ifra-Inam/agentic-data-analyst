@@ -71,69 +71,6 @@ def invoke_llm(prompt):
     except Exception as error:
         show_processing_error(error)
 
-
-def render_analysis_result(prompt, full_result, validated_sql):
-    with st.chat_message("assistant"):
-        final_prompt = f"""
-            You are a senior data analyst.
-
-            The user asked:
-            {prompt}
-
-            The database analysis produced this result:
-            {full_result["result"]}
-
-            Write a clear, concise answer to the user's question.
-
-            Rules:
-            - Do not return JSON.
-            - Do not mention the internal workflow, agents, SQL, or LangGraph.
-            - Give the user the actual answer first.
-            - Include important numbers or findings from the result.
-            - Do not invent information that is not present in the result.
-            - Do not create any visualizations or charts.
-            - Use normal natural language.
-        """
-
-        response = invoke_llm(final_prompt)
-        st.markdown(response.content)
-
-        additional_kwargs = {}
-
-        if validated_sql:
-            additional_kwargs["validated_sql"] = validated_sql
-            with st.expander("Final validated SQL"):
-                st.code(validated_sql, language="sql")
-
-        chart_response = None
-
-        if full_result.get("chart"):
-            st.plotly_chart(full_result["chart"])
-            additional_kwargs["chart"] = full_result["chart"]
-
-            chart_prompt = f"""
-            Briefly explain what this chart represents based on the user's question:
-
-            User question:
-            {prompt}
-
-            Analysis result:
-            {full_result["result"]}
-
-            Give 1-2 sentences describing what the chart shows and the main takeaway.
-            Do not invent trends or values.
-            """
-
-            chart_response = invoke_llm(chart_prompt)
-            st.caption(chart_response.content)
-
-        if chart_response:
-            additional_kwargs["chart_caption"] = chart_response.content
-
-        st.session_state.messages.append(
-            AIMessage(content=response.content, additional_kwargs=additional_kwargs)
-        )
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -215,20 +152,65 @@ if prompt:
 
                 progress.update(label=next_stage)
 
-        if full_result.get("retry_limit_reached"):
-            progress.update(label="Stopped after repeated revisions.", state="error", expanded=False)
-        else:
-            progress.update(label="Analysis complete.", state="complete", expanded=False)
+        progress.update(label="Analysis complete.", state="complete", expanded=False)
 
-    if full_result.get("retry_limit_reached"):
-        retry_message = (
-            "I couldn't produce a reliable answer after 3 query revisions. "
-            "Try rephrasing the question or narrowing it to a specific metric or time period."
-        )
-        with st.chat_message("assistant"):
-            st.warning(retry_message)
-        st.session_state.messages.append(AIMessage(content=retry_message))
-    else:
-        render_analysis_result(prompt, full_result, validated_sql)
+    with st.chat_message("assistant"):
 
+        final_prompt = f"""
+            You are a senior data analyst.
 
+            The user asked:
+            {prompt}
+
+            The database analysis produced this result:
+            {full_result["result"]}
+
+            Write a clear, concise answer to the user's question.
+
+            Rules:
+            - Do not return JSON.
+            - Do not mention the internal workflow, agents, SQL, or LangGraph.
+            - Give the user the actual answer first.
+            - Include important numbers or findings from the result.
+            - Do not invent information that is not present in the result.
+            - Do not create any visualizations or charts. 
+            - Use normal natural language.
+        """
+
+        response = invoke_llm(final_prompt)
+        st.markdown(response.content)
+
+        additional_kwargs = {}
+
+        if validated_sql:
+            additional_kwargs["validated_sql"] = validated_sql
+            with st.expander("Final validated SQL"):
+                st.code(validated_sql, language="sql")
+        
+        chart_response = None
+
+        if full_result.get("chart"):
+
+            st.plotly_chart(full_result["chart"])
+            additional_kwargs["chart"] = full_result["chart"]
+
+            chart_prompt = f"""
+            Briefly explain what this chart represents based on the user's question:
+
+            User question:
+            {prompt}
+
+            Analysis result:
+            {full_result["result"]}
+
+            Give 1-2 sentences describing what the chart shows and the main takeaway.
+            Do not invent trends or values.
+            """
+
+            chart_response = invoke_llm(chart_prompt)
+            st.caption(chart_response.content)
+
+        if chart_response:
+            additional_kwargs["chart_caption"] = chart_response.content
+
+        st.session_state.messages.append(AIMessage(content=response.content, additional_kwargs=additional_kwargs))

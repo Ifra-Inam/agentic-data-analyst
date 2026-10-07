@@ -34,28 +34,18 @@ graph.add_conditional_edges("rag",
 graph.add_edge("schema", "sql")
 graph.add_edge("sql", "validate")
 graph.add_conditional_edges("validate", 
-                                lambda state: (
-                                    "STOP" if state.get("retry_limit_reached")
-                                    else "VALID" if state["sql_valid"]
-                                    else "REVISE"
-                                ),
+                                lambda state: state["sql_valid"],
                                 {
-                                    "VALID": "execute",
-                                    "REVISE": "sql",
-                                    "STOP": END,
+                                    True: "execute",
+                                    False: "sql"
                                 }
                             )
 graph.add_edge("execute", "check")
 graph.add_conditional_edges("check",
-                                lambda state: (
-                                    "STOP" if state.get("retry_limit_reached")
-                                    else "VALID" if state["result_valid"]
-                                    else "REVISE"
-                                ),
+                                lambda state: state["result_valid"],
                                 {
-                                    "VALID": "analyze",
-                                    "REVISE": "sql",
-                                    "STOP": END,
+                                    True: "analyze",
+                                    False: "sql"
                                 }
                             )
 graph.add_conditional_edges("analyze",
