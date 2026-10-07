@@ -34,25 +34,35 @@ graph.add_conditional_edges("rag",
 graph.add_edge("schema", "sql")
 graph.add_edge("sql", "validate")
 graph.add_conditional_edges("validate", 
-                                lambda state: state["sql_valid"],
+                                lambda state: (
+                                    "STOP" if state.get("retry_limit_reached")
+                                    else "VALID" if state["sql_valid"]
+                                    else "REVISE"
+                                ),
                                 {
-                                    True: "execute",
-                                    False: "sql"
+                                    "VALID": "execute",
+                                    "REVISE": "sql",
+                                    "STOP": END,
                                 }
                             )
 graph.add_edge("execute", "check")
 graph.add_conditional_edges("check",
-                                lambda state: state["result_valid"],
+                                lambda state: (
+                                    "STOP" if state.get("retry_limit_reached")
+                                    else "VALID" if state["result_valid"]
+                                    else "REVISE"
+                                ),
                                 {
-                                    True: "analyze",
-                                    False: "sql"
+                                    "VALID": "analyze",
+                                    "REVISE": "sql",
+                                    "STOP": END,
                                 }
                             )
 graph.add_conditional_edges("analyze",
                             lambda state: state["chart_needed"],
                             {
-                                "CHART": "chart",
-                                "NO_CHART": END
+                                True: "chart",
+                                False: END
                             })
 graph.add_edge("chart", END)
 

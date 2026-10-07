@@ -42,6 +42,9 @@ def get_schema(state:AgentState) -> AgentState:
         Full database schema:
         {schema}
 
+        Business Documentation: 
+        {state["doc_info"]}
+
         Return ONLY the relevant tables and columns needed to answer the user's question.
 
         The output must use exactly the same structure as the full database schema:

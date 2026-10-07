@@ -37,11 +37,16 @@ def analyze_result(state:AgentState) -> AgentState:
             ''' 
 
     llm = get_llm()
-    state["chart_needed"] = llm.invoke(chart_needed_prompt).content.strip()     
+    response = llm.invoke(chart_needed_prompt).content.strip()    
 
+    if response == "CHART":
+        state["chart_needed"] = True
+    else:
+        state["chart_needed"] = False
+ 
     structured_llm = llm.with_structured_output(ChartSpecs)
 
-    if state["chart_needed"] == "CHART":
+    if state["chart_needed"] == True:
         chart_prompt = f'''
             Determine the appropriate chart specifications for the user's question
             and query result.
