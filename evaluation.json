@@ -1,0 +1,64 @@
+{
+  "basic_questions": [
+    "How many customers are in the database?",
+    "How many products does AdventureWorks sell?",
+    "What are the different product categories?",
+    "What is the most expensive product?",
+    "What is the cheapest product?",
+    "How many employees are there?",
+    "How many sales orders were placed?",
+    "What are the different territories?",
+    "How many stores does AdventureWorks have?",
+    "What products are currently listed as finished goods?"
+  ],
+  "aggregation_business_questions": [
+    "What is the total sales revenue?",
+    "What is the total number of products sold?",
+    "What are the top 10 best-selling products by quantity?",
+    "What are the top 10 products by revenue?",
+    "Which product category generates the most revenue?",
+    "Which product subcategory generates the most revenue?",
+    "What is the average order value?",
+    "What is the average quantity of products per order?",
+    "Which territory generates the most revenue?",
+    "How much revenue does each territory generate?"
+  ],
+  "time_based_questions": [
+    "How has revenue changed over time?",
+    "What was the total revenue for each year?",
+    "Which month had the highest revenue?",
+    "How many orders were placed each month?",
+    "What are the monthly sales trends for the most recent year?",
+    "Which year had the highest sales?",
+    "How has the number of customers changed over time?"
+  ],
+  "customer_analysis": [
+    "Who are the top 10 customers by revenue?",
+    "Which customers have placed the most orders?",
+    "What is the average revenue per customer?",
+    "How many customers have never placed an order?",
+    "Which territory has the most customers?",
+    "What percentage of total revenue comes from the top 10 customers?"
+  ],
+  "product_analysis": [
+    "Which products have the highest profit margin?",
+    "Which products have the highest sales quantity but lowest revenue?",
+    "Which products have never been sold?",
+    "Which product categories have the most products?",
+    "What is the average selling price by product category?",
+    "Which products generate the most revenue after discounts?",
+    "How do product sales vary across territories?"
+  ],
+  "rag_schema_evaluation": [
+    "What is net line revenue?",
+    "Calculate total net line revenue.",
+    "What is the average net line revenue per order?",
+    "Which product category has the highest net line revenue?",
+    "Which customer generated the highest net line revenue?",
+    "How does net line revenue vary by territory?",
+    "What percentage of orders received a discount?",
+    "How do discounts affect net line revenue?",
+    "What are the top 5 products by net line revenue?",
+    "Show the monthly trend of net line revenue."
+  ]
+}
