@@ -1,6 +1,6 @@
 # Agentic Data Analyst
 
-An AI-assisted analyst for the AdventureWorks sample database. Ask business questions in natural language and get answers based on the database and the project's business documentation, with validated SQL and charts when useful.
+I created an AI-powered data analyst for the AdventureWorks database. A user can ask business questions in natural language and get answers based on the database and business documentation, with validated SQL and charts when useful.
 
 ## How It Works
 
