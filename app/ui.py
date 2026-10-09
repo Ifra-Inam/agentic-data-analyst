@@ -212,7 +212,7 @@ if prompt:
             Formatting rules:
             - Respond using ordinary Markdown, not LaTeX.
             - Do not use LaTeX delimiters such as $, \(, \), \[, or \].
-              - Do not write mathematical notation or use LaTeX formatting.
+            - Do not write mathematical notation or use LaTeX formatting.
             - Do not put normal words, sentences, dates, or currency values inside mathematical expressions.
             - Format currency as USD 5,063,798.38 without a dollar sign.
             - Use commas for thousands separators.
