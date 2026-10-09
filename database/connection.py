@@ -6,9 +6,9 @@ load_dotenv()
 
 def get_connection():
     return psycopg2.connect(
-        host="localhost",
-        port=5432,
-        dbname="Adventureworks",
-        user="postgres",
-        password=os.getenv("DB_PASSWORD")
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "5432")),
+        dbname=os.getenv("DB_NAME", "Adventureworks"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", "postgres"),
     )

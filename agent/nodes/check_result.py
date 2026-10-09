@@ -8,6 +8,10 @@ def check_result(state:AgentState) -> AgentState:
         state["result_valid"] = False
         return state
 
+    if state.get("result_truncated"):
+        state["result_valid"] = True
+        return state
+
     llm = get_llm()
 
     check_result_prompt = f'''

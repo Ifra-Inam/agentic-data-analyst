@@ -20,6 +20,9 @@ def generate_sql(state:AgentState) -> AgentState:
             User's Question: {state["user_query"]},
             Documentation: {state["doc_info"]},
             Database Schema: {state["schema_info"]}
+
+        For detail/list questions, return at most 200 rows and use a meaningful ORDER BY.
+        Do not limit aggregate calculations such as totals, averages, or counts.
     '''
 
     llm = get_llm()

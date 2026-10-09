@@ -1,4 +1,6 @@
+import math
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -42,6 +44,29 @@ from agent.graph import app
 
 llm = get_llm()
 
+def format_retry_wait(error):
+    match = re.search(
+        r"please try again in\s+((?:\d+(?:\.\d+)?(?:ms|s|m|h|d))+)",
+        str(error),
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return None
+
+    unit_seconds = {"ms": 0.001, "s": 1, "m": 60, "h": 3600, "d": 86400}
+    parts = re.findall(r"(\d+(?:\.\d+)?)(ms|s|m|h|d)", match.group(1), flags=re.IGNORECASE)
+    total_seconds = sum(float(amount) * unit_seconds[unit.lower()] for amount, unit in parts)
+    minutes, seconds = divmod(round(total_seconds), 60)
+
+    if minutes:
+        minute_label = f"{minutes} minute" if minutes == 1 else f"{minutes} minutes"
+        if seconds:
+            second_label = f"{seconds} second" if seconds == 1 else f"{seconds} seconds"
+            return f"{minute_label} {second_label}"
+        return minute_label
+
+    seconds = max(seconds, 1)
+    return f"{seconds} second" if seconds == 1 else f"{seconds} seconds"
 
 def show_processing_error(error):
     logging.exception("Question processing failed")
@@ -51,11 +76,14 @@ def show_processing_error(error):
         or "rate_limit_exceeded" in error_text
         or "rate limit" in error_text
     ):
-        st.error("The AI service is temporarily rate-limited. Please wait a few seconds and try again.")
+        retry_wait = format_retry_wait(error)
+        if retry_wait:
+            st.error(f"The AI service is temporarily rate-limited. Please try again in about {retry_wait}.")
+        else:
+            st.error("The AI service is temporarily rate-limited. Please wait a few seconds and try again.")
     else:
         st.error("Something went wrong while processing your question. Please try again.")
     st.stop()
-
 
 def stream_updates(state, progress):
     try:
@@ -63,7 +91,6 @@ def stream_updates(state, progress):
     except Exception as error:
         progress.update(label="Analysis couldn't be completed.", state="error", expanded=False)
         show_processing_error(error)
-
 
 def invoke_llm(prompt):
     try:
@@ -165,6 +192,8 @@ if prompt:
             The database analysis produced this result:
             {full_result["result"]}
 
+            Result completeness: {"partial preview; some rows or cell text were omitted" if full_result.get("result_truncated") else "complete"}
+
             Write a clear, concise answer to the user's question.
 
             Rules:
@@ -173,11 +202,14 @@ if prompt:
             - Give the user the actual answer first.
             - Include important numbers or findings from the result.
             - Do not invent information that is not present in the result.
+            - If the result is partial, say so and do not present it as a complete list or total.
             - Do not create any visualizations or charts. 
             - Use normal natural language.
         """
 
         response = invoke_llm(final_prompt)
+        if full_result.get("result_truncated"):
+            st.warning("Showing a bounded preview; some result rows or cell text were omitted.")
         st.markdown(response.content)
 
         additional_kwargs = {}

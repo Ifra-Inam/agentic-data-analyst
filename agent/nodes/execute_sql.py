@@ -8,7 +8,6 @@ def execute_sql(state:AgentState)->AgentState:
     cursor = connection.cursor()
     
     try:
-
         query = state["generated_sql"]
         cursor.execute(query)
         rows = cursor.fetchall()

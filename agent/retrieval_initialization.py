@@ -1,4 +1,5 @@
 import streamlit as st # to show the retrieval initialization progress on the ui
+import os
 
 # 1. load documentation pages into a list of Document objects 
 
@@ -49,7 +50,7 @@ status.write(f"Split documentation into {len(all_splits)} chunks.")
 
 from langchain_ollama import OllamaEmbeddings
 
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
+embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
 
 from langchain_chroma import Chroma
 

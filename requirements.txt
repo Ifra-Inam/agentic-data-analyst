@@ -12,3 +12,4 @@ langchain-ollama
 langchain-chroma
 plotly
 pydantic 
+sqlglot

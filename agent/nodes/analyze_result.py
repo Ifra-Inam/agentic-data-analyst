@@ -34,7 +34,7 @@ def analyze_result(state:AgentState) -> AgentState:
                     - the result is a single value
                     - the result is mainly explanatory text
                     - a chart would not add meaningful insight 
-            ''' 
+    ''' 
 
     llm = get_llm()
     response = llm.invoke(chart_needed_prompt).content.strip()    
@@ -43,10 +43,9 @@ def analyze_result(state:AgentState) -> AgentState:
         state["chart_needed"] = True
     else:
         state["chart_needed"] = False
- 
-    structured_llm = llm.with_structured_output(ChartSpecs)
 
     if state["chart_needed"] == True:
+        structured_llm = llm.with_structured_output(ChartSpecs, method="json_schema", strict=True)
         chart_prompt = f'''
             Determine the appropriate chart specifications for the user's question
             and query result.
@@ -64,6 +63,8 @@ def analyze_result(state:AgentState) -> AgentState:
             - x and y MUST exactly match the column names in the query result.
             - Do not rename, reformat, or invent column names.
             - Use the exact spelling and capitalization of the query result columns.
+            - Return a JSON object only with the keys chart_type, x, y, and title.
+            - chart_type must be one of: scatter, line, bar, pie.
         '''
         state["chart_specs"] = structured_llm.invoke(chart_prompt)
         print(state["result"])
