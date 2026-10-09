@@ -68,6 +68,9 @@ def format_retry_wait(error):
     seconds = max(seconds, 1)
     return f"{seconds} second" if seconds == 1 else f"{seconds} seconds"
 
+def escape_math_delimiters(text):
+    return re.sub(r"(?<!\\)\$", r"\\$", text)
+
 def show_processing_error(error):
     logging.exception("Question processing failed")
     error_text = str(error).lower()
@@ -107,7 +110,7 @@ for message in st.session_state.messages:
             st.write(message.content)
     elif isinstance(message, AIMessage):
         with st.chat_message("assistant"):
-            st.write(message.content)
+            st.markdown(escape_math_delimiters(message.content))
             validated_sql = message.additional_kwargs.get("validated_sql")
             if validated_sql:
                 with st.expander("Final validated SQL"):
@@ -116,7 +119,7 @@ for message in st.session_state.messages:
         chart_caption = message.additional_kwargs.get("chart_caption")
         if chart and chart_caption:
             st.plotly_chart(chart)
-            st.caption(chart_caption)
+            st.caption(escape_math_delimiters(chart_caption))
 
 prompt = st.chat_input("Ask away your question..")
 state: AgentState = {"user_query": prompt}
@@ -205,12 +208,23 @@ if prompt:
             - If the result is partial, say so and do not present it as a complete list or total.
             - Do not create any visualizations or charts. 
             - Use normal natural language.
+
+            Formatting rules:
+            - Respond using ordinary Markdown, not LaTeX.
+            - Do not use LaTeX delimiters such as $, \(, \), \[, or \].
+              - Do not write mathematical notation or use LaTeX formatting.
+            - Do not put normal words, sentences, dates, or currency values inside mathematical expressions.
+            - Format currency as USD 5,063,798.38 without a dollar sign.
+            - Use commas for thousands separators.
+            - Use regular Markdown bullets when listing findings.
+            - Keep sentences and spaces between words intact.
+            - Only use code formatting for SQL or literal code.
         """
 
         response = invoke_llm(final_prompt)
         if full_result.get("result_truncated"):
             st.warning("Showing a bounded preview; some result rows or cell text were omitted.")
-        st.markdown(response.content)
+        st.markdown(escape_math_delimiters(response.content))
 
         additional_kwargs = {}
 
@@ -240,7 +254,7 @@ if prompt:
             """
 
             chart_response = invoke_llm(chart_prompt)
-            st.caption(chart_response.content)
+            st.caption(escape_math_delimiters(chart_response.content))
 
         if chart_response:
             additional_kwargs["chart_caption"] = chart_response.content
