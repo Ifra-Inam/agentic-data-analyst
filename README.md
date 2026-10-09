@@ -8,11 +8,26 @@ The Streamlit app runs a LangGraph workflow:
 
 1. Retrieve relevant content from the Markdown files in `knowledge/` using Ollama embeddings and Chroma.
 2. Decide whether the question can be answered from documentation or needs a database query.
-3. For database questions, inspect the PostgreSQL schema, generate SQL, check that it is read-only, and ask the model to review it.
+3. For database questions, inspect the PostgreSQL schema, generate SQL, check that it is read-only, and ask the LLM to review it.
 4. Run the SQL, check the result, and optionally create a Plotly chart.
-5. Ask the model to write the final answer.
+5. Ask the LLM to write the final answer.
 
 Groq provides chat completions using `openai/gpt-oss-20b`. Ollama provides the `nomic-embed-text` embedding model. PostgreSQL stores AdventureWorks.
+
+## Graph Nodes
+
+The graph is defined in [`agent/graph.py`](agent/graph.py). These nodes run in order for database questions; documentation-only questions can finish after `rag`.
+
+| Node       | Implementation                                                       | Responsibility                                                                                                                                               |
+| ---------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `rag`      | [`retrieve_documentation.py`](agent/nodes/retrieve_documentation.py) | Retrieves relevant business documentation and routes the question to either a documentation answer or database analysis.                                     |
+| `schema`   | [`get_schema.py`](agent/nodes/get_schema.py)                         | Reads the database schema and asks the LLM to select relevant tables and columns.                                                                            |
+| `sql`      | [`generate_sql.py`](agent/nodes/generate_sql.py)                     | Generates a PostgreSQL query from the question, documentation, and selected schema.                                                                          |
+| `validate` | [`validate_sql.py`](agent/nodes/validate_sql.py)                     | Checks SQL syntax, restricts queries to read-only forms, and asks the LLM whether the query answers the question. Invalid SQL returns to `sql` for revision. |
+| `execute`  | [`execute_sql.py`](agent/nodes/execute_sql.py)                       | Executes the query and stores its rows or database error in the workflow state.                                                                              |
+| `check`    | [`check_result.py`](agent/nodes/check_result.py)                     | Checks whether the result answers the question. Results that need revision return to `sql`.                                                                  |
+| `analyze`  | [`analyze_result.py`](agent/nodes/analyze_result.py)                 | Decides whether a chart would help and, if so, selects its type and fields.                                                                                  |
+| `chart`    | [`create_chart.py`](agent/nodes/create_chart.py)                     | Builds the Plotly chart from the selected result columns.                                                                                                    |
 
 ## Requirements
 
