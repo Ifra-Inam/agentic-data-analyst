@@ -16,7 +16,7 @@ Groq provides chat completions using `openai/gpt-oss-20b`. Ollama provides the `
 
 ## Graph Nodes
 
-The graph is defined in [`agent/graph.py`](agent/graph.py). These nodes run in order for database questions; documentation-only questions can finish after `rag`.
+The graph is defined in [`agent/graph.py`](agent/graph.py). This is the node order for database questions. Documentation-only questions finish after `rag`.
 
 | Node       | Implementation                                                       | Responsibility                                                                                                                                               |
 | ---------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
