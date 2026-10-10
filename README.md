@@ -69,13 +69,13 @@ docker compose down
 
 `docker compose down` stops and removes the containers but keeps database and Ollama data. `docker compose down -v` also deletes the volumes, including database contents; use it only when you intentionally want a clean reset.
 
-## Deploy to Streamlit Community Cloud
+## Deployment to Streamlit Community Cloud
 
-The app supports a hosted mode using Supabase Postgres and FastEmbed, while Docker continues to use local Postgres and Ollama.
+I deployed the application to Streamlit Community Cloud using Supabase PostgreSQL for the database and FastEmbed for text embeddings. The local Docker setup continues to use PostgreSQL and Ollama.
 
-1. Confirm the AdventureWorks schema and data have been imported into Supabase and that the app's database user has read-only access to the required schemas and tables.
-2. In Streamlit Community Cloud, create an app from this GitHub repository and set the app file to `app/ui.py`.
-3. Add these root-level values under the app's **Secrets** settings. Use the Supabase **Session pooler** connection string with the read-only user's credentials; the app requires SSL for `DATABASE_URL` connections.
+1. Imported the AdventureWorks database into Supabase and configured a read-only database user with access to the required schemas and tables.
+2. Deployed the GitHub repository to Streamlit Community Cloud, using `app/ui.py` as the application entry point.
+3. Configured the following secrets in Streamlit Community Cloud using the Supabase Session pooler connection details and the read-only database user's credentials:
 
 ```toml
 GROQ_API_KEY = "your-groq-api-key"
@@ -84,9 +84,9 @@ EMBEDDING_PROVIDER = "fastembed"
 FASTEMBED_MODEL = "BAAI/bge-small-en-v1.5"
 ```
 
-Streamlit exposes root-level secrets as environment variables, which is how the app reads these settings. The embedding model is downloaded and loaded by the app at startup; Ollama is not needed in the hosted mode. Supabase's free database plan can pause projects after inactivity, so the first database request after a pause may take longer.
+Streamlit exposes root-level secrets as environment variables, allowing the application to access its configuration without storing credentials in the repository. The hosted application downloads and loads the FastEmbed model at startup, so Ollama is not required in the cloud environment. The database connection uses SSL.
 
-Keep the hosted database read-only and do not put credentials in the repository. A deployed Community Cloud app is not private just because its source repository is private; configure access controls before exposing non-public data.
+The deployment uses Supabase's free database plan, which may pause after inactivity. As a result, the first database request after a pause may take longer.
 
 ## Ask Questions
 
@@ -98,6 +98,8 @@ Example questions:
 - Which products generate the most revenue?
 
 Questions asking for large unaggregated result sets can use substantial model tokens. Prefer totals, trends, rankings, or a specific top-N when those answer the question.
+
+[`evalution.json`](evaluation.json) includes example questions you can use to try out the app.
 
 ## Run Without Docker
 
