@@ -55,6 +55,7 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       OLLAMA_BASE_URL: http://ollama:11434
+      EMBEDDING_PROVIDER: ollama
     depends_on:
       postgres:
         condition: service_healthy

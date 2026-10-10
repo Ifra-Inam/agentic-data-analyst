@@ -4,6 +4,7 @@ import os
 # 1. load documentation pages into a list of Document objects 
 
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from pathlib import Path
 
 DOC_PATHS = [
@@ -48,9 +49,31 @@ status.write(f"Split documentation into {len(all_splits)} chunks.")
 
 # 3. select an embedding model, then embed and store the chunks into a vector store
 
-from langchain_ollama import OllamaEmbeddings
+class FastEmbedAdapter(Embeddings):
+    def __init__(self, model_name: str):
+        from fastembed import TextEmbedding
 
-embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
+        self.model = TextEmbedding(model_name=model_name)
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [embedding.tolist() for embedding in self.model.embed(texts)]
+
+    def embed_query(self, text: str) -> list[float]:
+        return next(self.model.query_embed(text)).tolist()
+
+
+embedding_provider = os.getenv("EMBEDDING_PROVIDER", "ollama").strip().lower()
+if embedding_provider == "ollama":
+    from langchain_ollama import OllamaEmbeddings
+    embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
+elif embedding_provider == "fastembed":
+    embeddings = FastEmbedAdapter(
+        model_name=os.getenv("FASTEMBED_MODEL", "BAAI/bge-small-en-v1.5")
+    )
+else:
+    raise ValueError(
+        "EMBEDDING_PROVIDER must be either 'ollama' or 'fastembed'."
+    )
 
 from langchain_chroma import Chroma
 
