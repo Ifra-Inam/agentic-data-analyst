@@ -1,4 +1,5 @@
 import json
+import re
 from ..agent_state import AgentState
 from database.connection import get_connection 
 from ..llm import get_llm
@@ -75,6 +76,15 @@ def get_schema(state:AgentState) -> AgentState:
 
     llm = get_llm()
     response = llm.invoke(relevant_schema_prompt).content.strip()
+
+    if response.startswith("```"):
+        response = re.sub(
+            r"^```(?:json)?\s*",
+            "",
+            response,
+            flags=re.IGNORECASE
+        )
+        response = re.sub(r"\s*```$", "", response)
 
     try:
         relavent_schema = json.loads(response)

@@ -1,4 +1,5 @@
 import json
+import re
 from ..agent_state import AgentState
 from ..llm import get_llm
 from ..retrieval_initialization import retriever
@@ -68,6 +69,10 @@ def retrieve_documentation(state:AgentState) -> AgentState:
     '''
 
     response = llm.invoke(route_prompt).content.strip()
+
+    if response.startswith("```"):
+        response = re.sub(r"^```(?:json)?\s*", "", response, flags=re.IGNORECASE)
+        response = re.sub(r"\s*```$", "", response)
 
     try:
         decision = json.loads(response)
