@@ -43,7 +43,7 @@ def get_schema(state:AgentState) -> AgentState:
         Retrieve only the database schema relevant to answering the user's question.
 
         User question:
-        {state["user_query"]}
+        {state.get("resolved_query") or state["user_query"]}
 
         Full database schema:
         {schema}

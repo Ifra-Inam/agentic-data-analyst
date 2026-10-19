@@ -3,6 +3,8 @@ from typing import TypedDict, Any
 class AgentState(TypedDict):
     user_query: str
     doc_info: str
+    conversation_history: str
+    resolved_query: str
     route_after_rag: str
     schema_info: dict[str, dict[str, str]]
     generated_sql: str

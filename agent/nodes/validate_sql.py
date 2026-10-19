@@ -47,18 +47,22 @@ def validate_sql(state: AgentState) -> AgentState:
         return state
 
     is_valid_sql_prompt = f'''
-        Determine whether this SQL correctly answers the user's question.
+        Determine whether this SQL retrieves or calculates the database information needed to answer the data-queryable part of the user's request.
 
-        User question: {state["user_query"]}
+        User question: {state.get("resolved_query") or state["user_query"]}
         Business context: {state["doc_info"]}
         Database schema: {state["schema_info"]}
         Generated SQL: {state["generated_sql"]}
 
         Check:
-            1. Does it answer the question?
+            1. Does it retrieve or calculate the facts, measures, or comparisons that can be answered from the database?
             2. Does it use the correct tables and columns?
             3. Does it follow the business definitions?
-            4. Are the calculations correct?
+            4. Would its result provide evidence for any requested evaluation or reflection that must be handled after the query?
+
+        Do not mark the SQL invalid merely because the user also asks for an evaluation, opinion, 
+        or reflection (for example, whether performance is good). That part is not a SQL responsibility. 
+        The SQL only needs to return the relevant data needed to support a grounded later analysis.
 
         Return only: VALID or INVALID
     '''

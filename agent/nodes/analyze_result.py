@@ -16,7 +16,7 @@ def analyze_result(state:AgentState) -> AgentState:
     chart_needed_prompt = f'''
                     You are analyzing the result of a database query.
         
-                    User Question: {state["user_query"]}
+                    User Question: {state.get("resolved_query") or state["user_query"]}
                     Query Result: {state["result"]}
         
                     Determine whether a chart would meaningfully improve the answer.
@@ -50,7 +50,7 @@ def analyze_result(state:AgentState) -> AgentState:
             Determine the appropriate chart specifications for the user's question
             and query result.
 
-            User Question: {state["user_query"]}
+            User Question: {state.get("resolved_query") or state["user_query"]}
             Query Result: {state["result"]}
 
             Choose:

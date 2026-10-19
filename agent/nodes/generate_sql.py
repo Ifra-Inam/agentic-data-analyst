@@ -17,7 +17,7 @@ def generate_sql(state:AgentState) -> AgentState:
 
     generate_sql_prompt=f'''
         Generate SQL provided these parameters. Return only the SQL query. Do not use Markdown code fences.
-            User's Question: {state["user_query"]},
+            User's Question: {state.get("resolved_query") or state["user_query"]},
             Documentation: {state["doc_info"]},
             Database Schema: {state["schema_info"]}
 

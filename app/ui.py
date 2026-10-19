@@ -122,12 +122,24 @@ for message in st.session_state.messages:
             st.caption(escape_math_delimiters(chart_caption))
 
 prompt = st.chat_input("Ask away your question..")
-state: AgentState = {"user_query": prompt}
 
 if prompt:
+    # keeps the last 6 messages to provide conversational context for follow-up questions without passing the entire chat history to the LLM.
+    previous_messages = st.session_state.messages.copy()
+
+    conversation_history = "\n".join(
+        f"{'User' if isinstance(message, HumanMessage) else 'Assistant'}: "
+        f"{message.content}"
+        for message in previous_messages[-6:]
+        if isinstance(message, (HumanMessage, AIMessage))
+    )
+
     with st.chat_message("user"):
         st.write(prompt)
-        st.session_state.messages.append(HumanMessage(prompt))
+
+    st.session_state.messages.append(HumanMessage(prompt))
+
+    state: AgentState = {"user_query": prompt, "conversation_history": conversation_history}
 
     full_result = dict(state)
     validated_sql = None
@@ -190,12 +202,13 @@ if prompt:
             You are a senior data analyst.
 
             The user asked:
-            {prompt}
+            {full_result.get("resolved_query", prompt)}
+
+            Business context:
+            {full_result["doc_info"]}
 
             The database analysis produced this result:
             {full_result["result"]}
-
-            Result completeness: {"partial preview; some rows or cell text were omitted" if full_result.get("result_truncated") else "complete"}
 
             Write a clear, concise answer to the user's question.
 
@@ -205,6 +218,7 @@ if prompt:
             - Give the user the actual answer first.
             - Include important numbers or findings from the result.
             - Do not invent information that is not present in the result.
+            - For any requested evaluation or reflection, base factual claims only on the query result and use the business context only to interpret defined metrics. State clearly when the result alone cannot support a conclusion; do not assume benchmarks, targets, or trends.
             - If the result is partial, say so and do not present it as a complete list or total.
             - Do not create any visualizations or charts. 
             - Use normal natural language.
@@ -222,8 +236,6 @@ if prompt:
         """
 
         response = invoke_llm(final_prompt)
-        if full_result.get("result_truncated"):
-            st.warning("Showing a bounded preview; some result rows or cell text were omitted.")
         st.markdown(escape_math_delimiters(response.content))
 
         additional_kwargs = {}
@@ -244,7 +256,7 @@ if prompt:
             Briefly explain what this chart represents based on the user's question:
 
             User question:
-            {prompt}
+            {full_result.get("resolved_query", prompt)}
 
             Analysis result:
             {full_result["result"]}
