@@ -60,7 +60,7 @@ def retrieve_documentation(state:AgentState) -> AgentState:
 
         Return valid JSON only, using this exact structure:
         {{
-            "resolved_query": "standalone question",
+            "resolved_query": "<the current question rewritten as a standalone question>",
             "route": "END"
         }}
 
@@ -68,7 +68,23 @@ def retrieve_documentation(state:AgentState) -> AgentState:
     '''
 
     response = llm.invoke(route_prompt).content.strip()
-    decision = json.loads(response)
+
+    try:
+        decision = json.loads(response)
+        resolved_query = decision["resolved_query"]
+        route = decision["route"]
+
+        if not isinstance(resolved_query, str) or not resolved_query.strip():
+            raise ValueError("Invalid resolved_query")
+
+        if route not in {"END", "SCHEMA"}:
+            raise ValueError("Invalid route")
+
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Invalid routing response from LLM: {response}"
+        ) from exc
+
     state["resolved_query"] = decision["resolved_query"]
     state["route_after_rag"] = decision["route"]
 

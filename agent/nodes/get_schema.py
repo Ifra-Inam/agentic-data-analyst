@@ -75,7 +75,14 @@ def get_schema(state:AgentState) -> AgentState:
 
     llm = get_llm()
     response = llm.invoke(relevant_schema_prompt).content.strip()
-    relavent_schema = json.loads(response)
+
+    try:
+        relavent_schema = json.loads(response)
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Invalid schema response from LLM: {response}"
+        ) from exc
+
     print(response)
 
     state["schema_info"] = relavent_schema
