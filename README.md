@@ -29,6 +29,8 @@ The graph is defined in [`agent/graph.py`](agent/graph.py). This is the node ord
 | `analyze`  | [`analyze_result.py`](agent/nodes/analyze_result.py)                 | Decides whether a chart would help and, if so, selects its type and fields.                                                                                  |
 | `chart`    | [`create_chart.py`](agent/nodes/create_chart.py)                     | Builds the Plotly chart from the selected result columns.                                                                                                    |
 
+A visual representation of the graph is illustrated in [`notebook/graph_diagram.drawio`](notebook/graph_diagram.drawio).
+
 ## Requirements
 
 - Docker Desktop with Docker Compose
