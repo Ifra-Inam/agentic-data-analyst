@@ -2,7 +2,7 @@
 
 **Purpose of this document:** This is a business glossary for the AdventureWorks Cycles data analyst agent. It defines what business terms *mean* so that the agent can correctly map a natural-language question to the right tables, columns, and filters. It does not replace schema inspection — the agent should still query the live database for structure. This document exists to resolve ambiguity in what the user is actually asking for.
 
-Schema note: AdventureWorks is organized into five PostgreSQL schemas: `sales`, `production`, `purchasing`, `humanresources`, and `person`. Table and column names below are given in lowercase, matching the standard AdventureWorks-for-Postgres port.
+Schema note: AdventureWorks is organized into five PostgreSQL schemas: `sales`, `production`, `purchasing`, `humanresources`, and `person`. Table and column names below are given in lowercase. Column-presence notes are checked against `database/adventureworks.sql`; confirm them against the active database if it may be a different port or version.
 
 ---
 
@@ -95,13 +95,15 @@ A single customer transaction/order header — represents the commercial "who, w
 **Related concepts:** Sales order line, Customer, Salesperson, Sales territory, Sales reason
 
 **Relevant AdventureWorks data:**
-- `sales.salesorderheader` (salesorderid, orderdate, duedate, shipdate, customerid, salespersonid, territoryid, subtotal, taxamt, freight, onlineorderflag, status)
+- `sales.salesorderheader` (salesorderid, orderdate, duedate, shipdate, customerid, salespersonid, territoryid, subtotal, taxamt, freight, totaldue, onlineorderflag, status)
 
 **Common user terminology:**
 order, sale, transaction, purchase, "an order"
 
 **Important distinction:**
 "Order" is ambiguous between a **sales order** (a customer buying from AdventureWorks, in `sales.*`) and a **purchase order** (AdventureWorks buying from a vendor, in `purchasing.*`). If the user's question involves customers, revenue, or products sold, they mean a sales order. If it involves vendors or restocking, they mean a purchase order. See "Purchase Order" below.
+
+`orderdate` is when the order was placed, `shipdate` is when it shipped (and can be NULL), and `duedate` is the expected due date. Use the date that matches the requested event rather than treating these dates as interchangeable. The stored `totaldue` equals `subtotal + taxamt + freight`; for a request explicitly including tax and freight, sum `totaldue` directly at order grain instead of adding those component columns. Because it includes tax and freight, it is not the default revenue measure.
 
 ---
 
@@ -119,7 +121,7 @@ An individual product line within a sales order — one row per distinct product
 order line, order item, line item, "products in the order"
 
 **Important distinction:**
-Revenue, quantity, and discount figures live at the **line level**, not the header level. `sales.salesorderheader.subtotal` is a header-level total but is not itself a stored, verified column in every AdventureWorks port (see `metric_definitions.md` for exact calculation guidance) — analytically, product-level and category-level revenue must be computed by aggregating `sales.salesorderdetail`, not by dividing the header subtotal.
+Revenue, quantity, and discount figures live at the **line level**, not the header level. `sales.salesorderheader.subtotal` is stored at order level, while `sales.salesorderdetail.linetotal` is absent from the checked SQL dump. Product-level and category-level revenue must be computed by aggregating sales detail lines, not by repeating or allocating the order subtotal (see `metric_definitions.md`).
 
 ---
 
@@ -285,13 +287,15 @@ An order placed by AdventureWorks to a vendor to procure materials/components �
 
 **Relevant AdventureWorks data:**
 - `purchasing.purchaseorderheader` (purchaseorderid, employeeid, vendorid, shipmethodid, orderdate, shipdate, subtotal, taxamt, freight, status)
-- `purchasing.purchaseorderdetail` (purchaseorderid, purchaseorderdetailid, productid, orderqty, unitprice, receiveqty, rejectedqty)
+- `purchasing.purchaseorderdetail` (purchaseorderid, purchaseorderdetailid, productid, orderqty, unitprice, receivedqty, rejectedqty)
 
 **Common user terminology:**
 purchase order, PO, restock order, procurement order
 
 **Important distinction:**
 See "Sales Order" above — "order" without qualification is ambiguous. Purchase orders reference an `employeeid` (the AdventureWorks employee who issued the order), not a `salespersonid`, since this is an internal procurement action, not a sale.
+
+Unlike the sales order header, the checked purchasing header has no `totaldue` column; its stored `subtotal`, `taxamt`, and `freight` can be added when a total including tax and freight is required. The purchasing detail also has no stored `linetotal` column in this dump.
 
 ---
 

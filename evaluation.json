@@ -60,5 +60,17 @@
     "How do discounts affect net line revenue?",
     "What are the top 5 products by net line revenue?",
     "Show the monthly trend of net line revenue."
+  ],
+  "rag_knowledge_documentation_questions": [
+    "When asked for sales totals including tax and freight, which stored column should be summed, and why is it not the default revenue measure?",
+    "Is sales.salesorderheader.totaldue present in the checked SQL dump, and which related line-total columns are absent?",
+    "How do gross line revenue and net line revenue differ?",
+    "Why can joining sales order headers to order details cause header totals to be double-counted?",
+    "Which territory field should be used for sales attributed to an order, and why?",
+    "How should a query choose between orderdate, shipdate, and duedate?",
+    "How can a query get the display name for individual and reseller customers?",
+    "Why might the sum of sales order counts by sales reason exceed the overall order count?",
+    "How should current inventory be calculated across storage locations, and is it historical?",
+    "How can current employees and their current department assignments be identified?"
   ]
 }

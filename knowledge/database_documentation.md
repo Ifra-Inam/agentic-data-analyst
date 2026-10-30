@@ -53,7 +53,7 @@ Represents AdventureWorks' outbound transactions: customers (individuals or rese
 - "Why do customers buy from us?" (sales reasons)
 
 ### Important ambiguities
-- **"Revenue" is not a single stored field.** In this Postgres port, `salesorderdetail`'s per-line total (`unitprice * (1 - unitpricediscount) * orderqty`) and `salesorderheader`'s total-due figure (`subtotal + taxamt + freight`) are **not** stored, pre-computed columns — they must be calculated in the query. See `metric_definitions.md` for exact formulas.
+- **Revenue and order total are different measures.** The line-total column `sales.salesorderdetail.linetotal` is absent from the checked SQL dump and line revenue must be calculated from unit price, discount, and quantity. For a request explicitly including tax and freight, sum the stored `sales.salesorderheader.totaldue` directly at order grain; it equals `subtotal + taxamt + freight` and is not the default revenue measure. Avoid recomputing it from the component columns or summing it after a one-to-many join to order details. See `metric_definitions.md` for formulas and aggregation guidance.
 - "Order" without qualification could mean a sales order or a purchase order — see `business_definitions.md`.
 - A customer's territory (`sales.customer.territoryid`), an order's territory (`sales.salesorderheader.territoryid`), and a salesperson's territory (`sales.salesperson.territoryid`) are separate fields and can, in principle, disagree.
 
@@ -149,7 +149,7 @@ Represents AdventureWorks' inbound transactions: buying raw materials and compon
 
 ### Important ambiguities
 - Purchasing is structurally the mirror image of sales (header + detail, subtotal/tax/freight), but is **inbound spend**, not revenue — it should never be summed together with sales figures as if they were the same kind of monetary flow.
-- As with sales, per-line and header total-due amounts are not stored as ready-made columns in this Postgres port and must be calculated — see `metric_definitions.md`.
+- In the checked SQL dump, `purchasing.purchaseorderdetail.linetotal` and `purchasing.purchaseorderheader.totaldue` are absent. The header's `subtotal`, `taxamt`, and `freight` are present; calculate a total including tax and freight from those fields. See `metric_definitions.md`.
 
 ### Relevant database schemas/tables
 `purchasing.vendor`, `purchasing.purchaseorderheader`, `purchasing.purchaseorderdetail`, `purchasing.productvendor`, `purchasing.shipmethod`
@@ -221,3 +221,11 @@ Represents how AdventureWorks builds the products it sells: which products are m
 - **Products connect Sales, Purchasing, and Production.** The same `production.product` table is referenced by `sales.salesorderdetail.productid`, `purchasing.purchaseorderdetail.productid`, and `production.workorder.productid` — this is the central join point for any "product performance across the business" question.
 - **People connect Sales and HR.** A salesperson is simultaneously a `humanresources.employee` row and a `sales.salesperson` row sharing the same `businessentityid`.
 - **Money is never a single global concept.** Sales revenue, purchasing spend, product cost, and product list price are all distinct monetary concepts stored in different places — see `metric_definitions.md` before summing or comparing any dollar figures across domains.
+
+## Practical Query Patterns
+
+- **Keep the row grain clear.** `sales.salesorderheader` is one row per order; `sales.salesorderdetail` is one row per product line. After joining them, a header amount such as `subtotal`, `taxamt`, `freight`, or `totaldue` repeats once per line. Aggregate it before the join or keep the calculation at order grain to avoid multiplying order totals.
+- **Use the dimension attached to the event being analyzed.** For sales attributed to a territory, use `sales.salesorderheader.territoryid`; customer and salesperson territory fields describe those entities and need not represent the order's attribution.
+- **Resolve customer display names by customer type.** Join `sales.customer.personid` to `person.person.businessentityid` for individuals and `sales.customer.storeid` to `sales.store.businessentityid` for reseller names.
+- **Choose the date by the business question.** `orderdate` measures when an order was placed, `shipdate` when it shipped (and may be NULL), and `duedate` the expected due date. A "sales trend" usually uses `orderdate`; shipping/fulfillment analysis should use `shipdate`.
+- **Expect many-to-many expansion for sales reasons.** `sales.salesorderheadersalesreason` can associate multiple reasons with one order. Count distinct orders within a reason, and do not expect reason-group counts to sum to the overall order count.

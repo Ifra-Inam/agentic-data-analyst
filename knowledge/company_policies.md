@@ -20,13 +20,11 @@ A sale is represented across two tables: `sales.salesorderheader` (one row per o
 
 **Classification:** Analytical convention
 
-When a user asks for "sales revenue" or "total sales," the agent should clarify whether they mean:
+When a user asks for "sales revenue" or "total sales" without specifying a measure, use net line revenue after discount as the default and state that assumption:
 
-- Gross line revenue before discount (`unitprice * orderqty`)
-- Net line revenue after discount (`unitprice * (1 - unitpricediscount) * orderqty`) — generally the best default for "revenue"
-- The order-level total including tax and freight (`subtotal + taxamt + freight`)
+- Net line revenue after discount: `unitprice * (1 - unitpricediscount) * orderqty`
 
-In this Postgres port of AdventureWorks, none of these are stored, ready-made columns — they must be computed in the query (see `metric_definitions.md`). The agent should not silently assume all monetary fields represent the same business metric, and should state which definition it used when the question doesn't specify.
+Use gross line revenue (`unitprice * orderqty`) when the user explicitly asks for revenue before discounts. Gross and net line revenue must be calculated from the line-item fields rather than read from a stored line-total column. If the user explicitly asks for an order total including tax and freight, use the stored `salesorderheader.totaldue` (sum it directly at order grain; do not re-add `subtotal`, `taxamt`, and `freight`). Label it as including tax and freight, and not as the default revenue measure. The line-level `salesorderdetail.linetotal` is not present in the SQL dump. See `metric_definitions.md` for details.
 
 ---
 
@@ -78,11 +76,11 @@ Sales (`sales.*`) represents AdventureWorks selling to customers (revenue, outbo
 
 ---
 
-## Computed/Derived Monetary Fields Are Not Pre-Stored
+## Stored and Absent Derived Monetary Fields
 
 **Classification:** Dataset-defined
 
-The original SQL Server version of AdventureWorks includes several computed columns (e.g. `salesorderdetail.linetotal`, `salesorderheader.totaldue`, `purchaseorderdetail.linetotal`, `purchaseorderheader.totaldue`, `salesorderheader.salesordernumber`). In the standard AdventureWorks-for-Postgres port, these computed columns are **dropped during setup** and are not present as queryable columns. Any analysis that needs a "line total" or "total due" figure must calculate it explicitly from its component fields rather than assuming the column exists — see `metric_definitions.md` for the exact formulas. The agent should verify column existence before referencing any of these fields by name.
+The checked SQL dump confirms that `sales.salesorderheader.totaldue` is present and represents `subtotal + taxamt + freight`. It is not the default revenue measure because it includes tax and freight. The following derived columns are absent from their table definitions in this dump: `sales.salesorderdetail.linetotal`, `purchasing.purchaseorderdetail.linetotal`, and `purchasing.purchaseorderheader.totaldue`. Calculate line totals from their component fields. Verify against the active database when it may differ from this dump; do not generalize column absence from one port to every AdventureWorks version.
 
 ---
 
@@ -112,9 +110,9 @@ Terms like "top-performing products," "best products," or "product performance" 
 
 ## Gross vs. Net Figures
 
-**Classification:** Requires clarification
+**Classification:** Analytical convention
 
-AdventureWorks does not define a single canonical "gross sales" or "net sales" figure. When a user's question depends on whether discounts, tax, and freight are included or excluded, the agent should either ask which they mean or clearly state the assumption being made in its answer (see `metric_definitions.md` for the building-block fields available).
+AdventureWorks does not define a single canonical "gross sales" or "net sales" figure. For an unspecified sales revenue question, default to net line revenue after discount and state that assumption; do not ask the user to choose. If using the order-level `totaldue`, state that it includes tax and freight and is not the default revenue measure. See `metric_definitions.md` for the component fields and formulas.
 
 ---
 

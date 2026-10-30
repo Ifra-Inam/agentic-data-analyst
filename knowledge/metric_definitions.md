@@ -1,6 +1,6 @@
 # AdventureWorks Metric Definitions
 
-**Purpose of this document:** This is a metric dictionary for the AdventureWorks data analyst agent. Every metric below has been checked against the actual AdventureWorks-for-Postgres schema, including which computed columns exist as stored fields versus which must be calculated. **Important schema note:** the original SQL Server AdventureWorks includes several computed columns (`linetotal`, `totaldue`, `salesordernumber`) that are dropped during setup in the standard Postgres port and are therefore NOT available as stored columns — every formula below reflects this.
+**Purpose of this document:** This is a metric dictionary for the AdventureWorks data analyst agent. Column presence below is checked against `database/adventureworks.sql`; do not assume every AdventureWorks port has identical columns. In this dump, `sales.salesorderheader.totaldue` exists, while `sales.salesorderdetail.linetotal`, `purchasing.purchaseorderdetail.linetotal`, and `purchasing.purchaseorderheader.totaldue` are absent from their table definitions.
 
 ---
 
@@ -14,7 +14,7 @@ A monetary measure of the value of goods sold to customers. There are multiple v
 
 - **Net line revenue** (recommended default): `sales.salesorderdetail.unitprice * (1 - sales.salesorderdetail.unitpricediscount) * sales.salesorderdetail.orderqty`
 - **Gross line revenue** (before discount): `sales.salesorderdetail.unitprice * sales.salesorderdetail.orderqty`
-- **Order total including tax/freight**: `sales.salesorderheader.subtotal + sales.salesorderheader.taxamt + sales.salesorderheader.freight`, where `subtotal` should itself equal the sum of net line revenue for that order's lines.
+- **Order total including tax/freight**: use the stored `sales.salesorderheader.totaldue` column. It is defined as `subtotal + taxamt + freight`; for an aggregate across orders, use `SUM(totaldue)` rather than adding the three component columns again.
 
 ## Relevant Data
 
@@ -26,7 +26,8 @@ A monetary measure of the value of goods sold to customers. There are multiple v
 - `salesorderdetail.unitprice` — actual transaction price per unit
 - `salesorderdetail.unitpricediscount` — fractional discount (e.g. 0.10 = 10% off), 0 if none
 - `salesorderdetail.orderqty` — units on that line
-- `salesorderheader.subtotal`, `taxamt`, `freight` — header-level totals (subtotal is a stored value, not a computed column, but should reconcile to the sum of line totals)
+- `salesorderheader.totaldue` — stored order-level total including subtotal, tax, and freight
+- `salesorderheader.subtotal`, `taxamt`, `freight` — stored header-level components that make up `totaldue`
 
 ## Aggregation
 
@@ -51,13 +52,17 @@ SUM at the line level for product/category/period breakdowns. Do not aggregate `
 
 ## Caveats
 
-- `linetotal` and `totaldue` are computed columns in the original SQL Server schema but are **dropped** in the standard Postgres port — they do not exist as queryable columns and must be calculated as shown above.
+- `sales.salesorderdetail.linetotal` is not present in the SQL dump; calculate line revenue from the detail fields above. `totaldue` exists and equals `subtotal + taxamt + freight`; it includes tax and freight, so it’s not the default revenue measure.
+- If the user explicitly asks for a total including tax and freight, use `SUM(sales.salesorderheader.totaldue)` directly. Do not recompute it from `subtotal + taxamt + freight` when the stored `totaldue` column is available. Label the result as an order total including tax and freight, not the default net line revenue.
+- `totaldue` is at order-header grain. Do not sum it after joining to order details unless the query first reduces the detail rows to one row per order; otherwise each order total can be repeated once per line.
 - Joining `salesorderheader` to `salesorderdetail` and then also referencing `salesorderheader.subtotal` in the same aggregation risks double-counting if not handled carefully (the header subtotal already represents the sum across all of that order's lines). When computing revenue at the product or category level, use only `salesorderdetail`, not the header total.
 - `unitprice` reflects the actual price charged, which may differ from `production.product.listprice` due to discounts or historical price changes — do not substitute list price for actual transaction price.
 
 ## Ambiguity
 
 If a user says "revenue" without specifying gross vs. net vs. total-with-tax-and-freight, the agent should default to net line revenue (post-discount, pre-tax/freight) as the most standard commercial definition, and note the assumption in the answer, per `company_policies.md`.
+
+When the user explicitly says "including tax and freight," the requested measure is clear: sum the stored `salesorderheader.totaldue` at order grain. For a calendar-year filter on the timestamp `orderdate`, use a half-open date range (for example, `orderdate >= DATE '2022-01-01' AND orderdate < DATE '2023-01-01'`) so all times on the final day are included without relying on timestamp precision.
 
 ---
 
@@ -187,7 +192,7 @@ SUM revenue, then divide by a distinct COUNT of orders — not a simple AVG of l
 
 ## Ambiguity
 
-Same gross/net/total-with-tax question as Sales Revenue applies here — clarify or default to net revenue.
+Same gross/net/total-with-tax question as Sales Revenue applies here — default to net line revenue and state that assumption unless the user specifies otherwise.
 
 ---
 
@@ -616,7 +621,7 @@ SUM.
 
 ## Caveats
 
-- `purchaseorderdetail.linetotal` and `purchaseorderheader.totaldue` are computed columns in the original SQL Server schema but are **dropped** in the standard Postgres port — calculate explicitly as shown above rather than referencing these column names.
+- `purchasing.purchaseorderdetail.linetotal` and `purchasing.purchaseorderheader.totaldue` are not present in the SQL dump's table definitions. Calculate line spend from `unitprice * orderqty`; use the header's stored `subtotal`, `taxamt`, and `freight` if an order total including tax and freight is needed.
 - This is inbound spend, structurally similar to Sales Revenue but economically the opposite direction — never combine with sales revenue in the same total.
 
 ## Ambiguity

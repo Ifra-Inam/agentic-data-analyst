@@ -39,11 +39,31 @@ status.write(f"Loaded {len(docs)} documentation pages.")
 
 # 2. split the Document objects into chunks
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import (MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter)
 
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=200)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=180)
 status.update(label="Chunking documentation...")
-all_splits = text_splitter.split_documents(docs)
+
+all_splits = []
+for doc in docs:
+    top_level_heading_count = sum(line.startswith("# ") for line in doc.page_content.splitlines())
+    section_heading = "#" if top_level_heading_count > 1 else "##"
+    section_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[(section_heading, "section")])
+
+    sections = section_splitter.split_text(doc.page_content)
+    for section in sections:
+        section_label = section.metadata.get("section")
+        chunks = text_splitter.split_documents(
+            [
+                Document(page_content=section.page_content, metadata={**doc.metadata, **section.metadata})
+            ]
+        )
+        for chunk in chunks:
+            page_content = chunk.page_content
+            if section_label:
+                page_content = f"{section_label}\n\n{page_content}"
+            all_splits.append(Document(page_content=page_content, metadata=chunk.metadata))
+
 print(f"Split documentation into {len(all_splits)} chunks.")
 status.write(f"Split documentation into {len(all_splits)} chunks.")
 
@@ -89,5 +109,5 @@ status.write(f"Indexed {len(all_splits)} chunks.")
 
 # 4. from the vector store, retrieve the k most similar chunks to the user's question
 
-retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 2})
+retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
 status.update(label="Documentation search is ready.", state="complete", expanded=False)
