@@ -109,5 +109,5 @@ status.write(f"Indexed {len(all_splits)} chunks.")
 
 # 4. from the vector store, retrieve the k most similar chunks to the user's question
 
-retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
 status.update(label="Documentation search is ready.", state="complete", expanded=False)
