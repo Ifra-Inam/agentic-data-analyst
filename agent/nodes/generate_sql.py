@@ -15,11 +15,30 @@ def clean_sql(sql: str) -> str:
 def generate_sql(state:AgentState) -> AgentState:
     """This node generates the appropriate SQL."""
 
+    state["sql_attempts"] = state.get("sql_attempts", 0) + 1
+    state["result"] = []
+    state["sql_error"] = ""
+    state["sql_valid"] = False
+    state["result_valid"] = False
+
+    previous_attempts = state.get("sql_attempt_history", [])
+    retry_context = "\n\n".join(
+        f"Attempt {index} was rejected during {attempt['stage']}.\n"
+        f"SQL:\n{attempt['sql']}\n"
+        f"Reason: {attempt['reason']}"
+        for index, attempt in enumerate(previous_attempts, start=1)
+    )
+
     generate_sql_prompt=f'''
         Generate SQL provided these parameters. Return only the SQL query. Do not use Markdown code fences.
             User's Question: {state.get("resolved_query") or state["user_query"]},
             Documentation: {state["doc_info"]},
             Database Schema: {state["schema_info"]}
+
+        Previous rejected attempts:
+        {retry_context or "None; this is the first attempt."}
+
+        If there are previous rejected attempts, revise the SQL to address their feedback.
 
         Result-size and ordering rules:
         - Ranking or comparison questions with no stated count: return the top 10 rows, ordered so the best match comes first.

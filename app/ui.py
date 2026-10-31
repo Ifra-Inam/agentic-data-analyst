@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from agent.agent_state import AgentState 
+from agent.agent_state import AgentState, MAX_SQL_ATTEMPTS
 from agent.llm import get_llm 
 
 st.title("📊 Agentic Data Analyst")
@@ -194,10 +194,30 @@ if prompt:
 
                 progress.update(label=next_stage)
 
-        progress.update(label="Analysis complete.", state="complete", expanded=False)
+        retry_exhausted = (
+            full_result.get("sql_attempts", 0) >= MAX_SQL_ATTEMPTS
+            and not full_result.get("result_valid", False)
+        )
+        if retry_exhausted:
+            progress.update(
+                label=f"Could not produce a valid result after {MAX_SQL_ATTEMPTS} attempts.",
+                state="error",
+                expanded=True,
+            )
+        else:
+            progress.update(label="Analysis complete.", state="complete", expanded=False)
+
+    if retry_exhausted:
+        answer = (
+            f"I couldn't produce a valid result after {MAX_SQL_ATTEMPTS} "
+            "query attempts. Please refine your question and try again."
+        )
+        with st.chat_message("assistant"):
+            st.error(answer)
+        st.session_state.messages.append(AIMessage(content=answer))
+        st.stop()
 
     with st.chat_message("assistant"):
-
         final_prompt = f"""
             You are a senior data analyst.
 
@@ -253,16 +273,16 @@ if prompt:
             additional_kwargs["chart"] = full_result["chart"]
 
             chart_prompt = f"""
-            Briefly explain what this chart represents based on the user's question:
+                Briefly explain what this chart represents based on the user's question:
 
-            User question:
-            {full_result.get("resolved_query", prompt)}
+                User question:
+                {full_result.get("resolved_query", prompt)}
 
-            Analysis result:
-            {full_result["result"]}
+                Analysis result:
+                {full_result["result"]}
 
-            Give 1-2 sentences describing what the chart shows and the main takeaway.
-            Do not invent trends or values.
+                Give 1-2 sentences describing what the chart shows and the main takeaway.
+                Do not invent trends or values.
             """
 
             chart_response = invoke_llm(chart_prompt)

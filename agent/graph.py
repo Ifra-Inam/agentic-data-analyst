@@ -1,4 +1,4 @@
-from .agent_state import AgentState
+from .agent_state import AgentState, MAX_SQL_ATTEMPTS
 from .nodes.retrieve_documentation import retrieve_documentation
 from .nodes.get_schema import get_schema
 from .nodes.generate_sql import generate_sql
@@ -9,6 +9,19 @@ from .nodes.analyze_result import analyze_result
 from .nodes.create_chart import create_chart
 
 from langgraph.graph import StateGraph, START, END
+
+
+def route_after_validation(state: AgentState) -> str:
+    if state["sql_valid"]:
+        return "execute"
+    return "retry" if state["sql_attempts"] < MAX_SQL_ATTEMPTS else "end"
+
+
+def route_after_check(state: AgentState) -> str:
+    if state["result_valid"]:
+        return "analyze"
+    return "retry" if state["sql_attempts"] < MAX_SQL_ATTEMPTS else "end"
+
 
 graph = StateGraph(AgentState)
 
@@ -34,18 +47,20 @@ graph.add_conditional_edges("rag",
 graph.add_edge("schema", "sql")
 graph.add_edge("sql", "validate")
 graph.add_conditional_edges("validate", 
-                                lambda state: state["sql_valid"],
+                                route_after_validation,
                                 {
-                                    True: "execute",
-                                    False: "sql"
+                                    "execute": "execute",
+                                    "retry": "sql",
+                                    "end": END,
                                 }
                             )
 graph.add_edge("execute", "check")
 graph.add_conditional_edges("check",
-                                lambda state: state["result_valid"],
+                                route_after_check,
                                 {
-                                    True: "analyze",
-                                    False: "sql"
+                                    "analyze": "analyze",
+                                    "retry": "sql",
+                                    "end": END,
                                 }
                             )
 graph.add_conditional_edges("analyze",
