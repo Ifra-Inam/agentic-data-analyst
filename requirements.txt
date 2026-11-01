@@ -1,11 +1,11 @@
 python-dotenv
 streamlit
-numpy
 psycopg2-binary
 ipykernel
 langchain
 langgraph
 langchain-groq
+langsmith
 deepagents
 langchain-text-splitters
 langchain-ollama

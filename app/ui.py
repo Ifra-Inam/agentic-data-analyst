@@ -208,10 +208,19 @@ if prompt:
             progress.update(label="Analysis complete.", state="complete", expanded=False)
 
     if retry_exhausted:
+        attempt_history = full_result.get("sql_attempt_history", [])
         answer = (
             f"I couldn't produce a valid result after {MAX_SQL_ATTEMPTS} "
             "query attempts. Please refine your question and try again."
         )
+        failures = [
+            f"- Attempt {index} ({failure.get('stage', 'analysis').replace('_', ' ')}): "
+            f"{failure['reason']}"
+            for index, failure in enumerate(attempt_history, start=1)
+            if failure.get("reason")
+        ]
+        if failures:
+            answer += "\n\nWhat went wrong:\n" + "\n".join(failures)
         with st.chat_message("assistant"):
             st.error(answer)
         st.session_state.messages.append(AIMessage(content=answer))
