@@ -1,14 +1,5 @@
-from ..agent_state import AgentState
+from ..agent_state import AgentState, ChartSpecs
 from ..llm import get_llm
-
-from typing import Literal
-from pydantic import BaseModel
-
-class ChartSpecs(BaseModel):
-    chart_type: Literal["scatter","line","bar","pie"]
-    x: str
-    y: str
-    title: str
 
 def analyze_result(state:AgentState) -> AgentState:
     """This node analyzes the result and determines if a chart is needed or not."""

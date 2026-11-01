@@ -1,7 +1,13 @@
-from typing import TypedDict, Any
+from typing import TypedDict, Literal, Any
 from pydantic import BaseModel, Field
 
 MAX_SQL_ATTEMPTS = 3
+
+class ChartSpecs(BaseModel):
+    chart_type: Literal["scatter","line","bar","pie"]
+    x: str
+    y: str
+    title: str
 
 class SQLAttempt(TypedDict):
     sql: str

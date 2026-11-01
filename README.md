@@ -49,10 +49,10 @@ Copy-Item .env.example .env
 Edit `.env` and replace `your_groq_api_key` with an active Groq API key:
 
 ```dotenv
-GROQ_API_KEY=your_actual_groq_api_key
+GROQ_API_KEY=your_groq_api_key
 ```
 
-To monitor graph execution, LLM calls, and errors, add your LangSmith credentials:
+To monitor graph execution, LLM calls, and errors, add your LangSmith API key:
 
 ```dotenv
 LANGSMITH_API_KEY=your_langsmith_api_key
@@ -91,7 +91,6 @@ I deployed the application to Streamlit Community Cloud using Supabase PostgreSQ
 ```toml
 GROQ_API_KEY = "your-groq-api-key"
 LANGSMITH_API_KEY = "your-langsmith-api-key"
-LANGSMITH_PROJECT = "agentic-data-analyst"
 DATABASE_URL = "postgresql://readonly_user:password@your-session-pooler-host:5432/postgres"
 EMBEDDING_PROVIDER = "fastembed"
 FASTEMBED_MODEL = "BAAI/bge-small-en-v1.5"
